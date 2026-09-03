@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mileage Calculator</title>
+<style>
+  :root {
+    --color-bg: #F6F5F1;
+    --color-surface: #FFFFFF;
+    --color-ink: #22303C;
+    --color-ink-muted: #5B6B76;
+    --color-accent: #2F6F5E;
+    --color-accent-soft: #E4EFEC;
+    --color-border: #DAD7CE;
+    --color-warning: #7A4A00;
+    --color-warning-bg: #FBF0DC;
+    --color-warning-border: #E8CE9C;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px 16px 64px;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app { max-width: 480px; margin: 0 auto; }
+
+  header { margin-bottom: 20px; }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .rule-reminder {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-ink-muted);
+  }
+
+  .storage-warning {
+    background: var(--color-warning-bg);
+    border: 1px solid var(--color-warning-border);
+    color: var(--color-warning);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+
+  section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    color: var(--color-ink-muted);
+  }
+
+  .input-row { display: flex; flex-direction: column; gap: 10px; }
+
+  label {
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  input {
+    width: 100%;
+    padding: 11px 12px;
+    font-size: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-family: inherit;
+    color: var(--color-ink);
+    background: var(--color-bg);
+  }
+
+  input:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+    background: var(--color-surface);
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    padding: 11px 16px;
+    cursor: pointer;
+  }
+
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  #addStopBtn, #saveDayBtn { background: var(--color-accent); color: white; width: 100%; }
+  #addStopBtn:active, #saveDayBtn:active { opacity: 0.85; }
+
+  .leg-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--color-ink-muted);
+    min-height: 16px;
+  }
+
+  #stopsList { list-style: none; margin: 12px 0 0; padding: 0; }
+
+  #stopsList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 14px;
+  }
+
+  .text-btn {
+    background: none;
+    color: var(--color-ink-muted);
+    font-weight: 500;
+    font-size: 13px;
+    padding: 4px 8px;
+    text-decoration: underline;
+  }
+
+  .closing-leg label { margin-bottom: 8px; }
+
+  .leg-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    padding: 6px 0;
+    gap: 12px;
+  }
+
+  .leg-row span:first-child { color: var(--color-ink); }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .total-row span:first-child { font-size: 14px; color: var(--color-ink-muted); }
+
+  #totalMiles { font-size: 26px; font-weight: 700; color: var(--color-accent); }
+
+  .zero-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    line-height: 1.5;
+  }
+
+  .save-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--color-ink-muted);
+    text-align: center;
+  }
+
+  #savedList { list-style: none; margin: 0 0 14px; padding: 0; }
+
+  #savedList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  #savedList li:first-child { border-top: none; }
+
+  .saved-info { display: flex; flex-direction: column; gap: 2px; }
+  .saved-date { font-size: 12px; color: var(--color-ink-muted); }
+
+  .saved-empty { font-size: 13px; color: var(--color-ink-muted); padding: 6px 0; }
+
+  .saved-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+    font-size: 13px;
+    color: var(--color-ink-muted);
+    margin-bottom: 14px;
+  }
+
+  .saved-actions { display: flex; gap: 10px; }
+
+  #copyAllBtn { background: var(--color-ink); color: white; flex: 1; font-size: 14px; }
+  #copyAllBtn:disabled { background: var(--color-border); color: var(--color-ink-muted); }
+
+  #clearAllBtn { background: none; border: 1px solid var(--color-border); color: var(--color-ink-muted); font-size: 14px; }
+
+  #manualCopyToggle { margin-top: 10px; }
+  #manualCopyBox { margin-top: 10px; }
+  #manualCopyBox textarea {
+    width: 100%;
+    min-height: 90px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    resize: vertical;
+  }
+
+  .backup-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  #exportBtn { background: var(--color-ink); color: white; }
+
+  #resetBtn { width: 100%; background: none; border: 1px solid var(--color-border); color: var(--color-ink-muted); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div id="storageWarning" class="storage-warning" style="display:none;"></div>
+
+  <header>
+    <h1>Mileage Calculator</h1>
+    <p class="rule-reminder">The first and last legs of the day get 20 miles subtracted (your commute). Stops between locations count in full. Daily totals round to the nearest whole mile. Everything is saved only on this device.</p>
+  </header>
+
+  <section>
+    <h2>Date</h2>
+    <input id="entryDate" type="date" />
+  </section>
+
+  <section>
+    <h2>Today's stops</h2>
+    <div class="input-row">
+      <input id="stopName" type="text" placeholder="Location name (e.g. Stanley ES)" />
+      <input id="stopMiles" type="number" inputmode="decimal" step="0.1" min="0" placeholder="Miles from previous stop" />
+      <button id="addStopBtn">Add stop</button>
+    </div>
+    <p id="legHint" class="leg-hint"></p>
+    <ul id="stopsList"></ul>
+  </section>
+
+  <section class="closing-leg">
+    <label for="finalMiles">Miles from your last stop back home</label>
+    <input id="finalMiles" type="number" inputmode="decimal" step="0.1" min="0" placeholder="0" />
+    <p id="finalMilesHint" class="leg-hint"></p>
+  </section>
+
+  <section>
+    <h2>Breakdown</h2>
+    <div id="breakdown"></div>
+    <div class="total-row">
+      <span>Reimbursable miles</span>
+      <span id="totalMiles">0</span>
+    </div>
+    <div id="zeroNote" class="zero-note" style="display:none;">
+      This day nets to 0 reimbursable miles — nothing to add to the sheet for this date.
+    </div>
+    <button id="saveDayBtn" disabled>Save this day</button>
+    <div class="save-hint">Saves it to the list below — nothing leaves this device.</div>
+  </section>
+
+  <section>
+    <h2>Saved days, not yet submitted</h2>
+    <ul id="savedList"></ul>
+    <div id="savedEmpty" class="saved-empty">No days saved yet.</div>
+    <div id="savedTotalRow" class="saved-total-row" style="display:none;">
+      <span>Total across saved days</span>
+      <span id="savedTotal">0</span>
+    </div>
+    <div class="saved-actions">
+      <button id="copyAllBtn" disabled>Copy all for sheet</button>
+      <button id="clearAllBtn">Clear all</button>
+    </div>
+    <button id="manualCopyToggle" class="text-btn">Copy button not working? Show text to copy by hand</button>
+    <div id="manualCopyBox" style="display:none;">
+      <p class="leg-hint">Tap inside, select all, then copy — then paste into the sheet starting at the Date column.</p>
+      <textarea id="manualCopyText" readonly rows="4"></textarea>
+    </div>
+  </section>
+
+  <section>
+    <h2>Backup your data</h2>
+    <p class="rule-reminder">This app stores everything only on this device, with no copy anywhere else. Export a backup file now and then, and especially before switching phones or clearing your browser.</p>
+    <div class="backup-actions">
+      <button id="exportBtn">Export backup file</button>
+      <label for="importFile" class="text-btn" style="cursor:pointer;">Import backup file</label>
+      <input type="file" id="importFile" accept="application/json" style="display:none;" />
+    </div>
+  </section>
+
+  <button id="resetBtn">Clear current day</button>
+
+</div>
+
+<script>
+  // ==================================================================
+  // ON-DEVICE STORAGE (IndexedDB)
+  // Replaces the earlier Claude-specific storage. Everything here is a
+  // real database written to this device's own file system by the
+  // browser — no server, no account, no publishing required, and
+  // nothing visible to anyone else, on any device.
+  // ==================================================================
+  const DB_NAME = 'mileage_calculator_db';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'kv';
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async function idbGet(key) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbSet(key, value) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).put(value, key);
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // Warn plainly if storage is unlikely to work, instead of failing silently.
+  function checkStorageSupport() {
+    const warning = document.getElementById('storageWarning');
+    if (location.protocol === 'file:') {
+      warning.textContent = "This page is open as a local file, which usually blocks on-device saving. Open it from a real web address instead (see the hosting notes) or your saved days and distances may not stick around.";
+      warning.style.display = 'block';
+      return false;
+    }
+    if (!window.indexedDB) {
+      warning.textContent = "This browser doesn't support on-device storage. The calculator will still work, but nothing will be saved between visits.";
+      warning.style.display = 'block';
+      return false;
+    }
+    return true;
+  }
+
+  // ---- STATE ----
+  let stops = [];
+  let idCounter = 0;
+  let savedDays = [];      // [{id, date, location, miles}]
+  let legs = {};           // { normalizedKey: { miles } }
+
+  // ---- DATE HELPERS ----
+  function todayISO() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function formatDateForExport(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    return `${m}/${d}/${y}`;
+  }
+
+  function formatDateForDisplay(iso) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // ---- DISTANCE LIBRARY (leg-based, unordered pair) ----
+  function normalizeLegKey(a, b) {
+    return [a, b].map(n => n.trim().toLowerCase()).sort().join('||');
+  }
+
+  function getLegMiles(a, b) {
+    const entry = legs[normalizeLegKey(a, b)];
+    return entry ? entry.miles : null;
+  }
+
+  function saveLeg(a, b, miles) {
+    legs[normalizeLegKey(a, b)] = { miles };
+    persistLegs();
+  }
+
+  function currentPreviousPointName() {
+    return stops.length === 0 ? 'Home' : stops[stops.length - 1].name;
+  }
+
+  async function loadLegs() {
+    try {
+      const result = await idbGet('mileage_legs');
+      legs = result || {};
+    } catch (err) {
+      legs = {};
+    }
+    updateStopNameHint();
+    updateFinalMilesHint();
+  }
+
+  async function persistLegs() {
+    try {
+      await idbSet('mileage_legs', legs);
+    } catch (err) {
+      console.error('Could not save distance library:', err);
+    }
+  }
+
+  function updateStopNameHint() {
+    const nameInput = document.getElementById('stopName');
+    const milesInput = document.getElementById('stopMiles');
+    const hint = document.getElementById('legHint');
+    const name = nameInput.value.trim();
+    if (!name) { hint.textContent = ''; return; }
+
+    const known = getLegMiles(currentPreviousPointName(), name);
+    if (known !== null) {
+      hint.textContent = `Known distance: ${known} mi`;
+      if (!milesInput.value) milesInput.value = known;
+    } else {
+      hint.textContent = "New leg — enter the mileage once and I'll remember it.";
+    }
+  }
+
+  function updateFinalMilesHint() {
+    const hint = document.getElementById('finalMilesHint');
+    const milesInput = document.getElementById('finalMiles');
+    if (stops.length === 0) { hint.textContent = ''; return; }
+
+    const lastStopName = stops[stops.length - 1].name;
+    const known = getLegMiles(lastStopName, 'Home');
+    if (known !== null) {
+      hint.textContent = `Known distance: ${known} mi`;
+      if (!milesInput.value) milesInput.value = known;
+    } else {
+      hint.textContent = "New leg — enter the mileage once and I'll remember it.";
+    }
+  }
+
+  // ---- CORE LOGIC ----
+  function calculate() {
+    const finalMilesInput = parseFloat(document.getElementById('finalMiles').value);
+    const finalMiles = isNaN(finalMilesInput) ? 0 : finalMilesInput;
+
+    let total = 0;
+    const legRows = [];
+
+    stops.forEach((stop, index) => {
+      let counted;
+      if (index === 0) {
+        counted = Math.max(0, stop.miles - 20);
+        legRows.push({ label: `Home → ${stop.name}`, raw: stop.miles, counted, note: '20 mi commute subtracted' });
+      } else {
+        counted = stop.miles;
+        legRows.push({ label: `${stops[index - 1].name} → ${stop.name}`, raw: stop.miles, counted, note: 'full distance' });
+      }
+      total += counted;
+    });
+
+    if (stops.length > 0) {
+      const closing = Math.max(0, finalMiles - 20);
+      legRows.push({ label: `${stops[stops.length - 1].name} → Home`, raw: finalMiles, counted: closing, note: '20 mi commute subtracted' });
+      total += closing;
+    }
+
+    return { legs: legRows, total, rounded: Math.round(total) };
+  }
+
+  // ---- CURRENT DAY ACTIONS ----
+  function addStop() {
+    const nameInput = document.getElementById('stopName');
+    const milesInput = document.getElementById('stopMiles');
+    const name = nameInput.value.trim();
+    const miles = parseFloat(milesInput.value);
+    if (!name || isNaN(miles) || miles < 0) return;
+
+    saveLeg(currentPreviousPointName(), name, miles);
+
+    stops.push({ id: idCounter++, name, miles });
+    nameInput.value = '';
+    milesInput.value = '';
+    nameInput.focus();
+    document.getElementById('legHint').textContent = '';
+    render();
+    updateFinalMilesHint();
+  }
+
+  function removeStop(id) {
+    stops = stops.filter(s => s.id !== id);
+    render();
+    updateFinalMilesHint();
+  }
+
+  function saveDay() {
+    const { rounded } = calculate();
+    const dateVal = document.getElementById('entryDate').value;
+    if (!dateVal || stops.length === 0 || rounded <= 0) return;
+
+    const locationString = stops.map(s => s.name).join(' - ');
+    savedDays.push({ id: Date.now(), date: dateVal, location: locationString, miles: rounded });
+    savedDays.sort((a, b) => a.date.localeCompare(b.date));
+    persistSavedDays();
+    renderSavedDays();
+
+    stops = [];
+    document.getElementById('finalMiles').value = '';
+    document.getElementById('entryDate').value = todayISO();
+    render();
+    updateFinalMilesHint();
+  }
+
+  // ---- SAVED (NOT YET SUBMITTED) DAYS ----
+  async function loadSavedDays() {
+    try {
+      const result = await idbGet('mileage_days');
+      savedDays = result || [];
+    } catch (err) {
+      savedDays = [];
+    }
+    renderSavedDays();
+  }
+
+  async function persistSavedDays() {
+    try {
+      await idbSet('mileage_days', savedDays);
+    } catch (err) {
+      console.error('Could not save:', err);
+    }
+  }
+
+  function deleteSavedDay(id) {
+    savedDays = savedDays.filter(d => d.id !== id);
+    persistSavedDays();
+    renderSavedDays();
+  }
+
+  function clearAllSaved() {
+    if (savedDays.length === 0) return;
+    if (!confirm("Clear all saved days? Do this after you've pasted them into the sheet.")) return;
+    savedDays = [];
+    persistSavedDays();
+    renderSavedDays();
+  }
+
+  // ---- COPY FOR SHEET ----
+  function sheetExportText() {
+    return savedDays
+      .map(d => `${formatDateForExport(d.date)}\t${d.location}\t${d.miles}`)
+      .join('\n');
+  }
+
+  function legacyCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    let succeeded = false;
+    try {
+      succeeded = document.execCommand('copy');
+    } catch (err) {
+      succeeded = false;
+    }
+    document.body.removeChild(textarea);
+    return succeeded;
+  }
+
+  function copyAllForSheet() {
+    if (savedDays.length === 0) return;
+    const text = sheetExportText();
+    const btn = document.getElementById('copyAllBtn');
+    const original = btn.textContent;
+
+    const showResult = (success) => {
+      btn.textContent = success ? 'Copied!' : 'Copy blocked — use text below';
+      setTimeout(() => { btn.textContent = original; }, success ? 1200 : 2500);
+      if (!success) showManualCopyBox();
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showResult(true)).catch(() => showResult(legacyCopy(text)));
+    } else {
+      showResult(legacyCopy(text));
+    }
+  }
+
+  function showManualCopyBox() {
+    document.getElementById('manualCopyText').value = sheetExportText();
+    document.getElementById('manualCopyBox').style.display = 'block';
+  }
+
+  // ---- BACKUP / RESTORE ----
+  function exportBackup() {
+    const payload = { exportedAt: new Date().toISOString(), savedDays, legs };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mileage-backup-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importBackupFile(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      let data;
+      try {
+        data = JSON.parse(e.target.result);
+      } catch (err) {
+        alert("That file couldn't be read as a backup.");
+        return;
+      }
+      if (!data || !Array.isArray(data.savedDays) || typeof data.legs !== 'object') {
+        alert("That file doesn't look like a valid backup.");
+        return;
+      }
+      if (!confirm('This replaces your current saved days and remembered distances with the backup file. Continue?')) return;
+
+      savedDays = data.savedDays;
+      legs = data.legs;
+      await persistSavedDays();
+      await persistLegs();
+      renderSavedDays();
+      updateStopNameHint();
+      updateFinalMilesHint();
+      alert('Backup restored.');
+    };
+    reader.readAsText(file);
+  }
+
+  // ---- RENDER: current day ----
+  function render() {
+    const list = document.getElementById('stopsList');
+    list.innerHTML = '';
+    stops.forEach((stop, index) => {
+      const li = document.createElement('li');
+      const label = document.createElement('span');
+      label.textContent = `${index + 1}. ${stop.name} — ${stop.miles} mi`;
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Remove';
+      removeBtn.className = 'text-btn';
+      removeBtn.addEventListener('click', () => removeStop(stop.id));
+      li.appendChild(label);
+      li.appendChild(removeBtn);
+      list.appendChild(li);
+    });
+
+    const { legs: legRows, rounded } = calculate();
+
+    const breakdown = document.getElementById('breakdown');
+    breakdown.innerHTML = legRows.length
+      ? legRows.map(leg => `<div class="leg-row"><span>${leg.label}</span><span>${leg.raw} mi → ${leg.counted.toFixed(2)} mi</span></div>`).join('')
+      : '<div class="leg-row"><span>Add a stop to see the math</span></div>';
+
+    document.getElementById('totalMiles').textContent = rounded;
+
+    const zeroNote = document.getElementById('zeroNote');
+    zeroNote.style.display = (stops.length > 0 && rounded <= 0) ? 'block' : 'none';
+
+    document.getElementById('saveDayBtn').disabled = stops.length === 0 || rounded <= 0;
+  }
+
+  // ---- RENDER: saved days ----
+  function renderSavedDays() {
+    const list = document.getElementById('savedList');
+    const empty = document.getElementById('savedEmpty');
+    const totalRow = document.getElementById('savedTotalRow');
+    const copyBtn = document.getElementById('copyAllBtn');
+
+    list.innerHTML = '';
+
+    if (savedDays.length === 0) {
+      empty.style.display = 'block';
+      totalRow.style.display = 'none';
+      copyBtn.disabled = true;
+      return;
+    }
+
+    empty.style.display = 'none';
+    totalRow.style.display = 'flex';
+    copyBtn.disabled = false;
+
+    let sum = 0;
+    savedDays.forEach(day => {
+      sum += day.miles;
+      const li = document.createElement('li');
+
+      const info = document.createElement('div');
+      info.className = 'saved-info';
+      const date = document.createElement('span');
+      date.className = 'saved-date';
+      date.textContent = formatDateForDisplay(day.date);
+      const loc = document.createElement('span');
+      loc.textContent = `${day.location} — ${day.miles} mi`;
+      info.appendChild(date);
+      info.appendChild(loc);
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.className = 'text-btn';
+      delBtn.addEventListener('click', () => deleteSavedDay(day.id));
+
+      li.appendChild(info);
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
+
+    document.getElementById('savedTotal').textContent = sum;
+  }
+
+  // ---- EVENTS ----
+  document.getElementById('entryDate').value = todayISO();
+
+  document.getElementById('stopName').addEventListener('input', updateStopNameHint);
+  document.getElementById('addStopBtn').addEventListener('click', addStop);
+  ['stopName', 'stopMiles'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') addStop(); });
+  });
+
+  document.getElementById('finalMiles').addEventListener('input', () => {
+    render();
+    const val = parseFloat(document.getElementById('finalMiles').value);
+    if (!isNaN(val) && val >= 0 && stops.length > 0) {
+      saveLeg(stops[stops.length - 1].name, 'Home', val);
+    }
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    stops = [];
+    document.getElementById('finalMiles').value = '';
+    render();
+    updateFinalMilesHint();
+  });
+
+  document.getElementById('saveDayBtn').addEventListener('click', saveDay);
+  document.getElementById('copyAllBtn').addEventListener('click', copyAllForSheet);
+  document.getElementById('clearAllBtn').addEventListener('click', clearAllSaved);
+  document.getElementById('manualCopyToggle').addEventListener('click', () => {
+    const box = document.getElementById('manualCopyBox');
+    box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+    if (box.style.display === 'block') showManualCopyBox();
+  });
+  document.getElementById('exportBtn').addEventListener('click', exportBackup);
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    if (e.target.files[0]) importBackupFile(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  render();
+  const storageOk = checkStorageSupport();
+  if (storageOk) {
+    loadSavedDays();
+    loadLegs();
+  }
+</script>
+</body>
+</html>
