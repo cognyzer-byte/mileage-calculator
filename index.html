@@ -228,6 +228,19 @@
 
   #clearAllBtn { background: none; border: 1px solid var(--color-border); color: var(--color-ink-muted); font-size: 14px; }
 
+  #legsToggle { margin-top: 4px; }
+  #legsList { list-style: none; margin: 12px 0 0; padding: 0; }
+  #legsList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--color-border);
+    font-size: 14px;
+    gap: 10px;
+  }
+  #legsList li:first-child { border-top: none; }
+
   #manualCopyToggle { margin-top: 10px; }
   #manualCopyBox { margin-top: 10px; }
   #manualCopyBox textarea {
@@ -307,6 +320,13 @@
       <p class="leg-hint">Tap inside, select all, then copy — then paste into the sheet starting at the Date column.</p>
       <textarea id="manualCopyText" readonly rows="4"></textarea>
     </div>
+  </section>
+
+  <section>
+    <h2>Remembered distances</h2>
+    <p class="rule-reminder" id="legsCount">No distances remembered yet.</p>
+    <button id="legsToggle" class="text-btn" style="padding-left:0;">Show list</button>
+    <ul id="legsList" style="display:none;"></ul>
   </section>
 
   <section>
@@ -422,8 +442,65 @@
   }
 
   function saveLeg(a, b, miles) {
-    legs[normalizeLegKey(a, b)] = { miles };
+    legs[normalizeLegKey(a, b)] = { a, b, miles };
     persistLegs();
+    updateLegsCount();
+    renderLegsList();
+  }
+
+  function legCount() {
+    return Object.keys(legs).length;
+  }
+
+  function updateLegsCount() {
+    const el = document.getElementById('legsCount');
+    const n = legCount();
+    el.textContent = n === 0 ? 'No distances remembered yet.' : `${n} distance${n === 1 ? '' : 's'} remembered.`;
+  }
+
+  // Older saved entries (from before names were stored) only have the
+  // normalized key to fall back on, so they show in lowercase until
+  // they're naturally re-entered through normal use.
+  function legLabel(key) {
+    const entry = legs[key];
+    if (entry.a && entry.b) {
+      return `${entry.a} \u2194 ${entry.b} \u2014 ${entry.miles} mi`;
+    }
+    const [a, b] = key.split('||');
+    return `${a} \u2194 ${b} \u2014 ${entry.miles} mi`;
+  }
+
+  function deleteLeg(key) {
+    delete legs[key];
+    persistLegs();
+    updateLegsCount();
+    renderLegsList();
+    updateStopNameHint();
+    updateFinalMilesHint();
+  }
+
+  function renderLegsList() {
+    const list = document.getElementById('legsList');
+    const keys = Object.keys(legs).sort((k1, k2) => legLabel(k1).localeCompare(legLabel(k2)));
+    list.innerHTML = '';
+
+    if (keys.length === 0) {
+      list.innerHTML = '<li class="saved-empty">No distances remembered yet.</li>';
+      return;
+    }
+
+    keys.forEach(key => {
+      const li = document.createElement('li');
+      const label = document.createElement('span');
+      label.textContent = legLabel(key);
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.className = 'text-btn';
+      delBtn.addEventListener('click', () => deleteLeg(key));
+      li.appendChild(label);
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
   }
 
   function currentPreviousPointName() {
@@ -437,6 +514,8 @@
     } catch (err) {
       legs = {};
     }
+    updateLegsCount();
+    renderLegsList();
     updateStopNameHint();
     updateFinalMilesHint();
   }
@@ -783,6 +862,13 @@
   document.getElementById('saveDayBtn').addEventListener('click', saveDay);
   document.getElementById('copyAllBtn').addEventListener('click', copyAllForSheet);
   document.getElementById('clearAllBtn').addEventListener('click', clearAllSaved);
+  document.getElementById('legsToggle').addEventListener('click', () => {
+    const list = document.getElementById('legsList');
+    const btn = document.getElementById('legsToggle');
+    const showing = list.style.display !== 'none';
+    list.style.display = showing ? 'none' : 'block';
+    btn.textContent = showing ? 'Show list' : 'Hide list';
+  });
   document.getElementById('manualCopyToggle').addEventListener('click', () => {
     const box = document.getElementById('manualCopyBox');
     box.style.display = (box.style.display === 'none') ? 'block' : 'none';
